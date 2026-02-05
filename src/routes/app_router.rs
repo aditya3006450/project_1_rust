@@ -8,6 +8,6 @@ pub fn app_router(state: AppState) -> Router {
 
 fn home(state: AppState) -> Router {
     Router::new()
-        .route("/", get("hello world"))
+        .route("/", get("pong"))
         .nest("/auth", auth_router(state))
 }
