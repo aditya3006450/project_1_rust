@@ -31,6 +31,7 @@ RUN useradd -m appuser
 USER appuser
 
 COPY --from=builder /app/target/release/project1_rust ./project1_rust
+COPY --from=builder /app/templates ./templates
 
 ENV PORT=3000
 EXPOSE $PORT
