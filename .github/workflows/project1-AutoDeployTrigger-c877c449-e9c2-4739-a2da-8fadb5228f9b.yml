@@ -1,0 +1,49 @@
+name: Trigger auto deployment for project1
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/project1-AutoDeployTrigger-c877c449-e9c2-4739-a2da-8fadb5228f9b.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.PROJECT1_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.PROJECT1_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.PROJECT1_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: 
+          registryUsername: ${{ secrets.PROJECT1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.PROJECT1_REGISTRY_PASSWORD }}
+          containerAppName: project1
+          resourceGroup: project1
+          imageToBuild: default/[parameters('containerAppName')]:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
