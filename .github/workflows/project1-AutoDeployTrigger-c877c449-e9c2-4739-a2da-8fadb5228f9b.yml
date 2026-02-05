@@ -37,12 +37,12 @@ jobs:
           appSourcePath: ${{ github.workspace }}
           _dockerfilePathKey_: _dockerfilePath_
           _targetLabelKey_: _targetLabel_
-          registryUrl: 
+          registryUrl: project1container.azurecr.io
           registryUsername: ${{ secrets.PROJECT1_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.PROJECT1_REGISTRY_PASSWORD }}
           containerAppName: project1
           resourceGroup: project1
-          imageToBuild: default/[parameters('containerAppName')]:${{ github.sha }}
+          imageToBuild: project1container.azurecr.io/project1:${{ github.sha }}
           _buildArgumentsKey_: |
             _buildArgumentsValues_
 
