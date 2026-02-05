@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO user_tokens (user_id, expires_at)\n            VALUES ($1, NOW() + INTERVAL '16 hours')\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "28da4be71ac305b3ec7eced4cde69797dfeead7fec23ff399db6a96c6431b40f"
+}

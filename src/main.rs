@@ -22,6 +22,12 @@ async fn main() {
         tera_renderer,
         mailer,
     };
+
+    sqlx::migrate!("./migrations")
+        .run(&app_state.pg_pool)
+        .await
+        .unwrap();
+
     let router = routes::app_router::app_router(app_state);
     let listner = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listner, router).await.unwrap()
