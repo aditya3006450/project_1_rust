@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT into user_connection (from_id, to_id, is_accepted) select $1,id,true from users where email = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "74cfdcbd01fbb5c86ee899544c70adf210b74de1d6a169b354f7b575c27a0f78"
+}
