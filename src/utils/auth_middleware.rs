@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::app_state::AppState;
 use crate::db::models::login_token::LoginToken;
 
-async fn auth_middleware(
+pub async fn auth_middleware(
     State(app_state): State<AppState>,
     mut req: Request,
     next: Next,

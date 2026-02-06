@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                u1.email AS from_email, \n                u2.email AS to_email, \n                uc.is_accepted\n            FROM user_connection uc\n            JOIN users u1 ON uc.from_id = u1.id\n            JOIN users u2 ON uc.to_id = u2.id\n            WHERE uc.from_id = $1 AND uc.is_accepted = true\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "from_email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "to_email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "is_accepted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d638e1f90507d3329fb1ef46d31b969007efba9ed1b7fe3f7b4340fb34c5bba0"
+}
