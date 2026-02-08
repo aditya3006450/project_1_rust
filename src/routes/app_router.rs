@@ -2,7 +2,11 @@ use axum::{Router, routing::get};
 
 use crate::{
     app_state::AppState,
-    routes::{auth::auth_router::auth_router, user_connection::user_connection::user_connection},
+    routes::{
+        auth::auth_router::auth_router,
+        socket::socket::{self, ws_route},
+        user_connection::user_connection::user_connection,
+    },
     utils::auth_middleware::auth_middleware,
 };
 
@@ -21,4 +25,5 @@ fn home(state: AppState) -> Router {
                 auth_middleware,
             )),
         )
+        .nest("/ws", ws_route(state.clone()))
 }
