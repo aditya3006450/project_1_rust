@@ -24,6 +24,11 @@ async fn main() {
         Arc::new(RwLock::new(HashMap::new()));
     let socket_connections: Arc<RwLock<HashMap<String, Tx>>> =
         Arc::new(RwLock::new(HashMap::new()));
+    let socket_id_to_connection: Arc<RwLock<HashMap<String, Tx>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+    let email_device_to_socket: Arc<RwLock<HashMap<String, HashMap<String, String>>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+
     let app_state = AppState {
         redis_pool,
         pg_pool,
@@ -31,6 +36,8 @@ async fn main() {
         mailer,
         user_index,
         socket_connections,
+        socket_id_to_connection,
+        email_device_to_socket,
     };
 
     sqlx::migrate!("./migrations")
@@ -39,6 +46,6 @@ async fn main() {
         .unwrap();
 
     let router = routes::app_router::app_router(app_state);
-    let listner = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listner, router).await.unwrap()
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, router).await.unwrap()
 }

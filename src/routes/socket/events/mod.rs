@@ -1,5 +1,6 @@
+pub mod check;
 pub mod connect;
 pub mod disconnect;
-pub mod ping;
+pub mod forwarder;
+pub mod heartbeat;
 pub mod register;
-pub mod try_connect;

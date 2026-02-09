@@ -4,7 +4,7 @@ use crate::{
     app_state::AppState,
     routes::{
         auth::auth_router::auth_router,
-        socket::socket::{self, ws_route},
+        socket::socket::ws_route,
         user_connection::user_connection::user_connection,
     },
     utils::auth_middleware::auth_middleware,
