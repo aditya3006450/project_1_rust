@@ -46,8 +46,8 @@ impl LoginToken {
     pub async fn get_user_id(token_id: Uuid, app_state: AppState) -> Result<String, sqlx::Error> {
         let key = format!("login_token:{}", token_id.clone());
         let mut redis_connection = app_state.redis_pool.get().await.unwrap();
-        let user_id: Result<String, redis::RedisError> = redis_connection.get(key).await.unwrap();
-        if let Ok(id) = user_id {
+        let cached_user_id: Option<String> = redis_connection.get(&key).await.unwrap();
+        if let Some(id) = cached_user_id {
             Ok(id)
         } else {
             let mut tx = app_state.clone().pg_pool.begin().await?;

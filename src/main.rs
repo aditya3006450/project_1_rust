@@ -1,7 +1,11 @@
+use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use dotenv::dotenv;
 
+use crate::app_state::Tx;
 use crate::utils::mail_service::mailer::Mailer;
 use crate::utils::tera_service::tera_renderer::TeraRenderer;
 use crate::{app_state::AppState, db::connect_db::connect_db};
@@ -16,11 +20,24 @@ async fn main() {
     let (pg_pool, redis_pool) = connect_db().await.expect("Failed to connect to databases");
     let tera_renderer = Arc::new(TeraRenderer::new());
     let mailer = Arc::new(Mailer::new());
+    let user_index: Arc<RwLock<HashMap<String, HashMap<String, Value>>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+    let socket_connections: Arc<RwLock<HashMap<String, Tx>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+    let socket_id_to_connection: Arc<RwLock<HashMap<String, Tx>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+    let email_device_to_socket: Arc<RwLock<HashMap<String, HashMap<String, String>>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+
     let app_state = AppState {
         redis_pool,
         pg_pool,
         tera_renderer,
         mailer,
+        user_index,
+        socket_connections,
+        socket_id_to_connection,
+        email_device_to_socket,
     };
 
     sqlx::migrate!("./migrations")
@@ -29,6 +46,6 @@ async fn main() {
         .unwrap();
 
     let router = routes::app_router::app_router(app_state);
-    let listner = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listner, router).await.unwrap()
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, router).await.unwrap()
 }

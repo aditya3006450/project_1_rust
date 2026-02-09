@@ -45,12 +45,13 @@ impl UserConnection {
         app_state: AppState,
     ) -> Result<(), sqlx::Error> {
         let mut tx = app_state.pg_pool.begin().await?;
+        println!("from_id: {from_id} to_id: {to_email}");
         sqlx::query!(
-            "INSERT into user_connection (from_id, to_id, is_accepted) select $1,id,true from users where email = $2",
+            "INSERT into user_connection (from_id, to_id, is_accepted) select $1,id,false from users where email = $2",
             from_id,
             to_email
         )
-        .fetch_one(&mut *tx)
+        .execute(&mut *tx)
         .await?;
         tx.commit().await?;
         Ok(())
