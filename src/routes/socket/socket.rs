@@ -5,7 +5,13 @@ use axum::{
     routing::get,
 };
 
-use crate::{app_state::AppState, routes::socket::types::SocketMessage};
+use crate::{
+    app_state::AppState,
+    routes::socket::{
+        events::{ping::ping_users, register::register_user},
+        types::SocketMessage,
+    },
+};
 
 pub fn ws_route(state: AppState) -> Router {
     Router::new().route("/", get(ws_handler).with_state(state))
@@ -20,6 +26,18 @@ async fn socket_handler(mut socket: WebSocket, state: AppState) {
         match message {
             Ok(msg) => {
                 if let Ok(socket_message) = SocketMessage::parse_message(msg.clone()) {
+                    match socket_message.event.as_str() {
+                        "connect" => (),
+                        "ping" => {
+                            ping_users(socket_message, state.clone());
+                        }
+                        "register" => {
+                            register_user(socket_message, &mut socket, state.clone());
+                        }
+                        "try_connect" => (),
+                        "disconnect" => (),
+                        _ => (),
+                    }
                 } else {
                 }
             }

@@ -18,6 +18,6 @@ pub struct AppState {
     pub redis_pool: RedisPool,
     pub mailer: Arc<Mailer>,
     pub tera_renderer: Arc<TeraRenderer>,
-    pub user_index: HashMap<String, HashMap<String, Value>>,
+    pub user_index: Arc<RwLock<HashMap<String, HashMap<String, Value>>>>,
     pub socket_connections: Arc<RwLock<HashMap<String, Tx>>>,
 }
