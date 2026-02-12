@@ -19,7 +19,6 @@ pub async fn auth_middleware(
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok());
     if let Some(token) = auth_header {
-        println!("{token}");
         if let Ok(user_id) =
             LoginToken::get_user_id(Uuid::parse_str(token).unwrap(), app_state).await
         {
