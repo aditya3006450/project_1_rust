@@ -40,22 +40,37 @@ pub async fn register_user(
                 // Device already exists, clean up old socket
                 let old_socket_id = old_socket_id.clone();
                 drop(email_device_map);
-                
+
                 // Remove old socket connection
-                app_state.socket_id_to_connection.write().await.remove(&old_socket_id);
-                
+                app_state
+                    .socket_id_to_connection
+                    .write()
+                    .await
+                    .remove(&old_socket_id);
+
                 // Remove from old socket_connections map
                 let old_key = format!("{}{}", message.from_email, message.from_device);
                 app_state.socket_connections.write().await.remove(&old_key);
-                
-                println!("Cleaned up old socket {} for device {}", old_socket_id, message.from_device);
+
+                println!(
+                    "Cleaned up old socket {} for device {}",
+                    old_socket_id, message.from_device
+                );
             }
         }
     }
 
     // Create device info from payload
-    let device_name = message.payload.get("device_name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let device_type = message.payload.get("device_type").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let device_name = message
+        .payload
+        .get("device_name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let device_type = message
+        .payload
+        .get("device_type")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let device_info = DeviceInfo {
         socket_id: socket_id.to_string(),
@@ -76,7 +91,9 @@ pub async fn register_user(
         // Continue in local-only mode
     } else {
         // Broadcast to other pods that user joined
-        if let Err(e) = broadcast_user_joined(&app_state, &message.from_email, &message.from_device).await {
+        if let Err(e) =
+            broadcast_user_joined(&app_state, &message.from_email, &message.from_device).await
+        {
             eprintln!("Failed to broadcast user joined: {}", e);
         }
     }

@@ -20,7 +20,7 @@ use crate::{
             check::check_users_response,
             connect::on_connect,
             disconnect::disconnect_user,
-            forwarder::{forward_to_peer, PendingMessages},
+            forwarder::{PendingMessages, forward_to_peer},
             heartbeat::handle_heartbeat,
             register::register_user,
         },
@@ -30,7 +30,6 @@ use crate::{
 };
 
 pub fn ws_route(state: AppState) -> Router {
-    // Start Redis subscriber for cross-pod messaging
     start_redis_subscriber(state.clone());
 
     Router::new().route("/", get(ws_handler).with_state(state))
@@ -58,7 +57,8 @@ async fn socket_handler(socket: WebSocket, state: AppState) {
 
     let mut user_email: Option<String> = None;
     let mut device_id: Option<String> = None;
-    let pending_messages: PendingMessages = Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new()));
+    let pending_messages: PendingMessages =
+        Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new()));
 
     while let Some(Ok(msg)) = receiver.next().await {
         if process_message(
@@ -100,81 +100,83 @@ async fn process_message(
                     "event": "error",
                     "error": validation_error
                 });
-                let _ = tx.send(Message::Text(error_response.to_string().into())).await;
+                let _ = tx
+                    .send(Message::Text(error_response.to_string().into()))
+                    .await;
                 return ControlFlow::Continue(());
             }
 
             match socket_message.event.as_str() {
                 "register" => {
                     // Only allow registration if not already registered
-                    if user_email.is_none() {
-                        // Clone necessary fields before moving socket_message
-                        let from_email = socket_message.from_email.clone();
-                        let from_device = socket_message.from_device.clone();
+                    // Clone necessary fields before moving socket_message
+                    let from_email = socket_message.from_email.clone();
+                    let from_device = socket_message.from_device.clone();
 
-                        match register_user(socket_message, socket_id, state.clone()).await {
-                            Ok(_) => {
-                                *user_email = Some(from_email.clone());
-                                *device_id = Some(from_device.clone());
+                    match register_user(socket_message, socket_id, state.clone()).await {
+                        Ok(_) => {
+                            *user_email = Some(from_email.clone());
+                            *device_id = Some(from_device.clone());
 
-                                // Store local mappings
-                                let key = format!("{}{}", from_email, from_device);
-                                state
-                                    .socket_connections
-                                    .write()
-                                    .await
-                                    .insert(key, tx.clone());
+                            // Store local mappings
+                            let key = format!("{}{}", from_email, from_device);
+                            state
+                                .socket_connections
+                                .write()
+                                .await
+                                .insert(key, tx.clone());
 
-                                // Store in new mappings
-                                state
-                                    .socket_id_to_connection
-                                    .write()
-                                    .await
-                                    .insert(socket_id.to_string(), tx.clone());
+                            // Store in new mappings
+                            state
+                                .socket_id_to_connection
+                                .write()
+                                .await
+                                .insert(socket_id.to_string(), tx.clone());
 
-                                let mut email_device_map = state.email_device_to_socket.write().await;
-                                if let Some(device_map) = email_device_map.get_mut(&from_email) {
-                                    device_map.insert(from_device.clone(), socket_id.to_string());
-                                } else {
-                                    let mut device_map = std::collections::HashMap::new();
-                                    device_map.insert(from_device.clone(), socket_id.to_string());
-                                    email_device_map.insert(from_email, device_map);
-                                }
-
-                                // Send success response
-                                let response = Message::Text(
-                                    serde_json::json!({
-                                        "event": "register",
-                                        "status": "ok",
-                                        "socket_id": socket_id
-                                    })
-                                    .to_string()
-                                    .into(),
-                                );
-                                let _ = tx.send(response).await;
+                            let mut email_device_map = state.email_device_to_socket.write().await;
+                            if let Some(device_map) = email_device_map.get_mut(&from_email) {
+                                device_map.insert(from_device.clone(), socket_id.to_string());
+                            } else {
+                                let mut device_map = std::collections::HashMap::new();
+                                device_map.insert(from_device.clone(), socket_id.to_string());
+                                email_device_map.insert(from_email, device_map);
                             }
-                            Err(e) => {
-                                // Send error response
-                                let response = Message::Text(
-                                    serde_json::json!({
-                                        "event": "register",
-                                        "status": "error",
-                                        "error": e
-                                    })
-                                    .to_string()
-                                    .into(),
-                                );
-                                let _ = tx.send(response).await;
-                                return ControlFlow::Break(());
-                            }
+
+                            // Send success response
+                            let response = Message::Text(
+                                serde_json::json!({
+                                    "event": "register",
+                                    "status": "ok",
+                                    "socket_id": socket_id
+                                })
+                                .to_string()
+                                .into(),
+                            );
+                            let _ = tx.send(response).await;
+                        }
+                        Err(e) => {
+                            // Send error response
+                            let response = Message::Text(
+                                serde_json::json!({
+                                    "event": "register",
+                                    "status": "error",
+                                    "error": e
+                                })
+                                .to_string()
+                                .into(),
+                            );
+                            let _ = tx.send(response).await;
+                            return ControlFlow::Break(());
                         }
                     }
                 }
                 "check" => {
                     if user_email.is_some() {
-                        let users =
-                            check_users_response(user_email.clone().unwrap_or_default(), state.clone())
-                                .await;
+                        let users = check_users_response(
+                            user_email.clone().unwrap_or_default(),
+                            state.clone(),
+                        )
+                        .await;
                         let response =
                             Message::Text(serde_json::to_string(&users).unwrap_or_default().into());
                         if tx.send(response).await.is_err() {
@@ -205,7 +207,9 @@ async fn process_message(
                         "event": "error",
                         "error": format!("Unknown event: {}", socket_message.event)
                     });
-                    let _ = tx.send(Message::Text(error_response.to_string().into())).await;
+                    let _ = tx
+                        .send(Message::Text(error_response.to_string().into()))
+                        .await;
                 }
             }
         }
@@ -215,7 +219,9 @@ async fn process_message(
                 "event": "error",
                 "error": format!("Failed to parse message: {}", e)
             });
-            let _ = tx.send(Message::Text(error_response.to_string().into())).await;
+            let _ = tx
+                .send(Message::Text(error_response.to_string().into()))
+                .await;
         }
     }
     ControlFlow::Continue(())
