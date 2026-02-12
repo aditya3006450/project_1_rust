@@ -177,10 +177,9 @@ async fn process_message(
                             state.clone(),
                         )
                         .await;
-                        let users_res = serde_json::to_string(&users).unwrap_or_default();
 
                         let response = Message::Text(
-                            serde_json::json!({"event":"check","users":users_res})
+                            serde_json::json!({"event":"check","users":users})
                                 .to_string()
                                 .into(),
                         );
