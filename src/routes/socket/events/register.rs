@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     app_state::AppState,
-    db::models::login_token::LoginToken,
+    db::models::{login_token::LoginToken, user::User},
     routes::socket::{
         redis_manager::{broadcast_user_joined, store_device_presence},
         types::{DeviceInfo, SocketMessage},
@@ -27,7 +27,11 @@ pub async fn register_user(
     };
 
     // Verify the email matches the token
-    if user_id != message.from_email {
+    if User::get_user_email(user_id, app_state.clone())
+        .await
+        .unwrap()
+        != message.from_email
+    {
         return Err("Email does not match token".to_string());
     }
 

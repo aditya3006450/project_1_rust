@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use redis::AsyncCommands;
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
@@ -116,5 +118,17 @@ impl User {
         tx.commit().await?;
 
         Ok(row.id.to_string())
+    }
+
+    pub async fn get_user_email(
+        user_id: String,
+        app_state: AppState,
+    ) -> Result<String, sqlx::Error> {
+        let user_id = Uuid::from_str(user_id.as_str()).unwrap();
+        let row = sqlx::query!("SELECT email FROM users WHERE id = $1", user_id)
+            .fetch_one(&app_state.pg_pool)
+            .await?;
+
+        Ok(row.email)
     }
 }
