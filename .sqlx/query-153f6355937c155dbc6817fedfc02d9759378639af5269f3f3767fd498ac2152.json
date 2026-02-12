@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE user_connection\n                SET is_accepted = true\n                WHERE from_id = (\n                    SELECT id FROM users WHERE email = $2\n                )\n                AND to_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "153f6355937c155dbc6817fedfc02d9759378639af5269f3f3767fd498ac2152"
+}
