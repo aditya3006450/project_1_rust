@@ -32,7 +32,7 @@ impl UserConnection {
             from_id,
             to_email
         )
-        .fetch_one(&mut *tx)
+        .execute(&mut *tx)
         .await?;
         tx.commit().await?;
         Ok(())
