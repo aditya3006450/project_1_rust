@@ -28,7 +28,14 @@ impl UserConnection {
     ) -> Result<(), sqlx::Error> {
         let mut tx = app_state.pg_pool.begin().await?;
         sqlx::query!(
-            "UPDATE user_connection uc SET is_accepted = true FROM users u where u.email = $2 and uc.from_id = $1 and uc.to_id = u.id",
+            r#"
+                UPDATE user_connection
+                SET is_accepted = true
+                WHERE from_id = (
+                    SELECT id FROM users WHERE email = $2
+                )
+                AND to_id = $1
+            "#,
             from_id,
             to_email
         )
