@@ -177,8 +177,13 @@ async fn process_message(
                             state.clone(),
                         )
                         .await;
-                        let response =
-                            Message::Text(serde_json::to_string(&users).unwrap_or_default().into());
+                        let users_res = serde_json::to_string(&users).unwrap_or_default();
+
+                        let response = Message::Text(
+                            serde_json::json!({"event":"check","users":users_res})
+                                .to_string()
+                                .into(),
+                        );
                         if tx.send(response).await.is_err() {
                             return ControlFlow::Break(());
                         }

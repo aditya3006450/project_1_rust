@@ -1,22 +1,16 @@
 use serde_json::Value;
-use std::str::FromStr;
-use uuid::Uuid;
 
 use crate::{
     app_state::AppState,
-    db::models::user_connection::UserConnection,
+    db::models::{user::User, user_connection::UserConnection},
     routes::socket::{
         redis_manager::get_user_devices,
         types::{DeviceInfo, UserDevicesResponse},
     },
 };
 
-pub async fn check_users(
-    from_email: String,
-    app_state: AppState,
-) -> Vec<UserDevicesResponse> {
-    // Get the user ID from email (assuming email is UUID)
-    let Ok(user_uuid) = Uuid::from_str(from_email.as_str()) else {
+pub async fn check_users(from_email: String, app_state: AppState) -> Vec<UserDevicesResponse> {
+    let Ok(user_uuid) = User::get_user_id(from_email, app_state.clone()).await else {
         return Vec::new();
     };
 
@@ -37,10 +31,7 @@ pub async fn check_users(
         match get_user_devices(&app_state, &email).await {
             Ok(devices) => {
                 if !devices.is_empty() {
-                    responses.push(UserDevicesResponse {
-                        email,
-                        devices,
-                    });
+                    responses.push(UserDevicesResponse { email, devices });
                 }
             }
             Err(_) => {
@@ -68,10 +59,7 @@ pub async fn check_users(
     responses
 }
 
-pub async fn check_users_response(
-    from_email: String,
-    app_state: AppState,
-) -> Value {
+pub async fn check_users_response(from_email: String, app_state: AppState) -> Value {
     let users = check_users(from_email, app_state).await;
     serde_json::to_value(users).unwrap_or_default()
 }

@@ -131,4 +131,10 @@ impl User {
 
         Ok(row.email)
     }
+    pub async fn get_user_id(email: String, app_state: AppState) -> Result<Uuid, sqlx::Error> {
+        let row = sqlx::query!("SELECT id FROM users WHERE email = $1", email)
+            .fetch_one(&app_state.pg_pool)
+            .await?;
+        Ok(row.id)
+    }
 }
