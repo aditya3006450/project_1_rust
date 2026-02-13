@@ -113,7 +113,14 @@ async fn process_message(
                     let from_email = socket_message.from_email.clone();
                     let from_device = socket_message.from_device.clone();
 
-                    match register_user(socket_message, socket_id, state.clone()).await {
+                    match register_user(
+                        socket_message,
+                        from_device.clone(),
+                        socket_id,
+                        state.clone(),
+                    )
+                    .await
+                    {
                         Ok(_) => {
                             *user_email = Some(from_email.clone());
                             *device_id = Some(from_device.clone());

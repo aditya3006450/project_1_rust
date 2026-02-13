@@ -2,7 +2,7 @@ use axum::extract::ws::Message;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 
 use crate::{
     app_state::AppState,
@@ -49,8 +49,9 @@ pub async fn forward_to_peer(
     }
 
     // If not found locally, publish to Redis for other pods
-    let message_id = format!("{}_{}_{}_{}_{}", 
-        message.from_email, 
+    let message_id = format!(
+        "{}_{}_{}_{}_{}",
+        message.from_email,
         message.from_device,
         message.to_email,
         message.to_device,
@@ -77,22 +78,26 @@ pub async fn forward_to_peer(
         // Remove from pending and send error
         let mut pending = pending_messages.lock().await;
         pending.remove(&message_id);
-        
+
         let error_response = ErrorResponse {
             event: "error".to_string(),
             error: "Failed to route message - Redis unavailable".to_string(),
             target_email: Some(message.to_email.clone()),
             target_device: Some(message.to_device.clone()),
         };
-        let _ = tx.send(Message::Text(
-            serde_json::to_string(&error_response).unwrap_or_default().into()
-        )).await;
+        let _ = tx
+            .send(Message::Text(
+                serde_json::to_string(&error_response)
+                    .unwrap_or_default()
+                    .into(),
+            ))
+            .await;
         return;
     }
 
     // Wait for delivery confirmation or timeout
     let timeout = tokio::time::timeout(Duration::from_secs(5), confirm_rx.recv()).await;
-    
+
     // Clean up pending
     let mut pending = pending_messages.lock().await;
     pending.remove(&message_id);
@@ -106,13 +111,20 @@ pub async fn forward_to_peer(
             // Timeout or no confirmation - target not found
             let error_response = ErrorResponse {
                 event: "target_not_found".to_string(),
-                error: format!("User {} with device {} is not online", message.to_email, message.to_device),
+                error: format!(
+                    "User {} with device {} is not online",
+                    message.to_email, message.to_device
+                ),
                 target_email: Some(message.to_email.clone()),
                 target_device: Some(message.to_device.clone()),
             };
-            let _ = tx.send(Message::Text(
-                serde_json::to_string(&error_response).unwrap_or_default().into()
-            )).await;
+            let _ = tx
+                .send(Message::Text(
+                    serde_json::to_string(&error_response)
+                        .unwrap_or_default()
+                        .into(),
+                ))
+                .await;
         }
     }
 }

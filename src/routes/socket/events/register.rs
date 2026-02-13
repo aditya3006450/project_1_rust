@@ -12,6 +12,7 @@ use crate::{
 
 pub async fn register_user(
     message: SocketMessage,
+    device_id: String,
     socket_id: &str,
     app_state: AppState,
 ) -> Result<(), String> {
@@ -80,6 +81,7 @@ pub async fn register_user(
         socket_id: socket_id.to_string(),
         device_name,
         device_type,
+        device_id,
     };
 
     // Store in Redis for cross-pod visibility

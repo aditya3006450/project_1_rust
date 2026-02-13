@@ -1,5 +1,5 @@
 use axum::extract::ws::Message;
-use serde::{de::Error, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Error};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,6 +81,7 @@ pub struct DeviceInfo {
     pub socket_id: String,
     pub device_name: Option<String>,
     pub device_type: Option<String>,
+    pub device_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
